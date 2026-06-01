@@ -44,12 +44,23 @@ async def lifespan(app: FastAPI):
     database = Database(db_path)
     await database.initialize()
 
-    # Register configured adapter
+    # Register adapters
     from .adapters.base import adapter_registry
     from .adapters.cursor_logs import CursorLogsAdapter
     logs_adapter = CursorLogsAdapter()
     adapter_registry.register(logs_adapter)
     adapter_registry.set_primary(settings.ADAPTER_PRIMARY)
+
+    # Try to register CDP adapter (for bidirectional communication)
+    if settings.ENABLE_CDP_ADAPTER:
+        try:
+            from .adapters.cursor_cdp import CursorCDPAdapter
+            cdp_adapter = CursorCDPAdapter()
+            await cdp_adapter.initialize()
+            adapter_registry.register(cdp_adapter)
+            logger.info("CDP adapter registered successfully")
+        except Exception as e:
+            logger.warning("CDP adapter not available", extra={"error": str(e)})
 
     # Initialize services
     auth_service = AuthService(database)
