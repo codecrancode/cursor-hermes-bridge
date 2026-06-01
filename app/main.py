@@ -1,6 +1,7 @@
 """Main FastAPI application for the Cursor-Hermes Bridge."""
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -55,7 +56,7 @@ async def lifespan(app: FastAPI):
     session_service = SessionService(database)
     progress_service = ProgressService(database)
     summary_service = SummaryService(database)
-    telegram_service = TelegramService(database, session_service, progress_service, summary_service)
+    telegram_service = TelegramService(auth_service, session_service, progress_service, summary_service)
 
     # Initialize the adapter and sync existing sessions
     await logs_adapter.initialize()
@@ -75,7 +76,10 @@ async def lifespan(app: FastAPI):
     # Start Telegram bot (only if token is configured)
     if settings.TELEGRAM_BOT_TOKEN:
         await telegram_service.initialize()
-        await telegram_service.start_polling()
+        # Run polling in background so it doesn't block startup
+        polling_task = asyncio.ensure_future(telegram_service.start_polling())
+        state.polling_task = polling_task
+        logger.info("Telegram bot polling started")
     else:
         logger.info("Telegram bot disabled — no TELEGRAM_BOT_TOKEN configured")
 
@@ -83,6 +87,8 @@ async def lifespan(app: FastAPI):
     yield
 
     # Cleanup
+    if hasattr(state, 'polling_task') and state.polling_task:
+        state.polling_task.cancel()
     await telegram_service.stop()
     await database.close()
     logger.info("Cursor-Hermes Bridge shut down")
