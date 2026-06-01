@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  cursor-bridge:
+    build: .
+    ports:
+      - "8920:8920"
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8920
+      - DATABASE_PATH=/app/data/cursor-bridge.db
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ~/.config/Cursor:/app/cursor-config:ro  # Linux
+      # For macOS, use this instead:
+      # - ~/Library/Application Support/Cursor:/app/cursor-config:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8920/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

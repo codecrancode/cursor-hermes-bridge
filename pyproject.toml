@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cursor-hermes-bridge"
+version = "0.1.0"
+description = "Bridge that lets Hermes monitor and control Cursor from Telegram"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "aiogram>=3.14.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.6.0",
+    "aiosqlite>=0.20.0",
+    "watchdog>=6.0.0",
+    "httpx>=0.28.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0",
+    "ruff>=0.8.0",
+    "mypy>=1.8.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "--cov=app --cov-report=term-missing"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
